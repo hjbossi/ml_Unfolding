@@ -1,15 +1,17 @@
+
 // Hannah Bossi <hannah.bossi@cern.ch>
-// splitMCUnfoldedTrueRatio.C : Plots the ratio of refolded to raw distributions after the split MC test
+// unfoldingTrueRatio.C : Plots the ratio of unfolded distributions to the fifth iteration
 // 02/13/2020
 
 void unfoldingTrueRatio(){
   // plotting styles
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
+  //whether or not to apply the efficiency corrections.
   Bool_t correctForEff = kTRUE;
   
   // Get the input file and the relevant objects to make the ratio plots
-  TFile*_file0       = TFile::Open("Unfolding_NeuralNetwork_R04_Pass1_Mar10th.root");
+  TFile*_file0       = TFile::Open("../Unfolding_NeuralNetwork_R04_Det_Mar11th.root");
   TH1F* trueDist      = (TH1F*)_file0->Get("true");
   TH1F* unfold_Iter1 = (TH1F*)_file0->Get("Bayesian_Unfoldediter1");
   TH1F* unfold_Iter2 = (TH1F*)_file0->Get("Bayesian_Unfoldediter2");
@@ -20,8 +22,8 @@ void unfoldingTrueRatio(){
   TH1F* unfold_Iter7 = (TH1F*)_file0->Get("Bayesian_Unfoldediter7");
   TH1F* unfold_Iter8 = (TH1F*)_file0->Get("Bayesian_Unfoldediter8");
   TH1F* unfold_Iter9 = (TH1F*)_file0->Get("Bayesian_Unfoldediter9");
-  TH1F* effnum       = (TH1F*)_file0->Get("htruth");
-  TH1F* effdenom     = (TH1F*)_file0->Get("trueptd");
+  TH1F* effnum       = (TH1F*)_file0->Get("htruth"); // numerator for kinematic efficiecny
+  TH1F* effdenom     = (TH1F*)_file0->Get("trueptd");// denominator for kinematic efficiency
   effnum->Divide(effdenom);
   
   int colors[20] = {kRed+2, kRed-4, kOrange+7, kOrange, kYellow-4, kSpring+10, kSpring, kGreen-3, kGreen+3, kTeal-7, kTeal, kAzure+10, kAzure-4, kBlue+2, kViolet+8, kViolet-1, kMagenta+1, kMagenta-4, kPink+7, kPink-4};
@@ -40,6 +42,11 @@ void unfoldingTrueRatio(){
    trueDist->SetMarkerStyle(20);
    trueDist->SetMarkerColor(kBlue);
    trueDist->SetLineColor(kBlue);
+   if(correctForEff){
+     for(Int_t i =0 ; i < trueDist->GetNbinsX()+1; i++){
+       trueDist->SetBinContent(i, trueDist->GetBinContent(i)*(1./effnum->GetBinContent(i)));
+     }
+   }
    trueDist->Scale(1./trueDist->Integral(), "width");
    trueDist->Draw();
 

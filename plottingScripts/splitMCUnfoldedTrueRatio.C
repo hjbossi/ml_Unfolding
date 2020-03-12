@@ -1,5 +1,5 @@
 // Hannah Bossi <hannah.bossi@cern.ch>
-// splitMCUnfoldedTrueRatio.C : Plots the ratio of refolded to raw distributions after the split MC test
+// splitMCUnfoldedTrueRatio.C : Plots the ratio of unfolded to true distributions after the split MC test
 // 02/13/2020
 
 void splitMCUnfoldedTrueRatio(){

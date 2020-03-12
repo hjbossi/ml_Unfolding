@@ -9,6 +9,13 @@
 //
 //==============================================================================
 
+/*
+  RooSimplepTPbPb_AB.cxx : Unfolds data corrected using the area based method. Data/MC comes directly from jet extractor output.
+  Hannah Bossi <hannah.bossi@yale.edu>
+  3/11/2020
+ */
+
+
 
 #if !(defined(__CINT__) || defined(__CLING__)) || defined(__ACLIC__)
 #include <iostream>
@@ -211,13 +218,13 @@ void RooSimplepTPbPb_AB(TString cFiles2="files1.txt")
   h1fulleff->Sumw2();
 
   //branches in the tree that you need in this analysis
-  Float_t ptJet,ptJetMatch, ptdet, pTRec;
+  Float_t ptJet,ptJetMatch, pTRec, ptdet;
   Float_t centData, cent;
-  
   Int_t nEv=0;; 
   //so mcr is correctly normalized to one, not the response.       
   cout<<"cucu"<<endl;
- 
+
+  
   ifstream infile2;
   infile2.open(cFiles2.Data());
   char filename2[300];
@@ -270,12 +277,11 @@ void RooSimplepTPbPb_AB(TString cFiles2="files1.txt")
     TFile *input2=TFile::Open(filename2);
     TTree *mc=(TTree*)input2->Get("JetTree_AliAnalysisTaskJetExtractor_hybridLevelJets_AKTFullR040_tracks_pT0150_caloClustersCombined_E0300_pt_scheme_Rho_Scaled_hybridLevelJets"); 
     Int_t nEv=mc->GetEntries(); 
-
     Int_t numTracks;
     mc->SetBranchAddress("Jet_Pt", &ptJet);
-    mc->SetBranchAddress("Event_Centrality", &cent); 
-    mc->SetBranchAddress("Jet_MC_MatchedPartLevelJet_Pt", &ptJetMatch);
-    mc->SetBranchAddress("Jet_MC_MatchedDetLevelJet_Pt", &ptdet);
+    mc->SetBranchAddress("Event_Centrality", &cent);
+    mc->SetBranchAddress("Jet_MC_MatchedDetLevelJet_Pt", &ptJetMatch);
+    //mc->SetBranchAddress("Jet_MC_MatchedDetLevelJet_Pt", &ptdet);
     mc->SetBranchAddress("Jet_NumTracks", &numTracks);
     Float_t jetTrackPt[400];
     mc->SetBranchAddress("Jet_Track_Pt", &jetTrackPt);
@@ -283,7 +289,7 @@ void RooSimplepTPbPb_AB(TString cFiles2="files1.txt")
     Int_t countm=0;
     for(int iEntry=0; iEntry< nEv; iEntry++){
       mc->GetEntry(iEntry);
-      if(cent > 10) continue; 
+      if(cent > 10) continue;
       double scalefactor = pTHardscalefactor;
       double EBscale = 1.;
       // put in if/else statements on the ptJet
@@ -296,7 +302,7 @@ void RooSimplepTPbPb_AB(TString cFiles2="files1.txt")
       else if(ptJet >= 100. && ptJet < 500.) EBscale = 1.0;
 
       scalefactor*=EBscale;
-
+      //std::cout << ptJetMatch << std::endl;
       // LTB
       Double_t maxPt = 0;
       for(Int_t index = 0; index < numTracks; index++){
@@ -329,8 +335,8 @@ void RooSimplepTPbPb_AB(TString cFiles2="files1.txt")
     TH1F *htruept=(TH1F*) h1fulleff->Clone( "truept"); 
  
     //////////efficiencies done////////////////////////////////////
- 
-    TFile *fout=new TFile (Form("UnfoldingSplit_AreaBased_R04_Mar10.root"),"RECREATE");
+    TString filename = "UnfoldingDet_AreaBased_R04_Mar10.root"; 
+    TFile *fout=new TFile (filename,"RECREATE");
     fout->cd();
     h1raw->SetName("raw");
     h1raw->Write();

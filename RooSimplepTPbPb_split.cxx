@@ -9,6 +9,12 @@
 //
 //==============================================================================
 
+/*
+  RooSimplepTPbPb_split.cxx : Script to perform the split MC test on the area based method.
+  Hannah Bossi <hannah.bossi@yale.edu>
+  3/4/2020
+ */
+
 
 #if !(defined(__CINT__) || defined(__CLING__)) || defined(__ACLIC__)
 #include <iostream>

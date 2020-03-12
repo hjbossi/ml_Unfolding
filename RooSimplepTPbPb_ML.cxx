@@ -10,10 +10,7 @@
 //==============================================================================
 
 
-// RooSimplepTPbPb_split_FromML.cxx
-// Script to perform the split MC test on the ML corrected psuedodata
-// The difference here will be that all the data is in one file.
-// pT hard bin scaling will need to be pre-done.
+// RooSimplepTPbPb_XML.cxx: Script to unfold the ML corrected data
 // Hannah Bossi <hannah.bossi@yale.edu>
 // 3/4/2020
 
@@ -260,7 +257,7 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
    Int_t nEv=mc->GetEntries(); 
    // get the jet pT predicted by the ml
    mc->SetBranchAddress("Predicted_Jet_Pt", &ptJet); 
-   mc->SetBranchAddress("Jet_MC_MatchedPartLevelJet_Pt", &ptJetMatch);
+   mc->SetBranchAddress("Jet_MC_MatchedDetLevelJet_Pt", &ptJetMatch);
    mc->SetBranchAddress("PtHardBin", &pTHardBin);
    mc->SetBranchAddress("Jet_Pt", &hybridPt);
    mc->SetBranchAddress("Event_Centrality", &cent);
@@ -305,7 +302,7 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
  
     //////////efficiencies done////////////////////////////////////
  
-    TFile *fout=new TFile (Form("Unfolding_NeuralNetwork_R04_Pass2_Mar10th.root"),"RECREATE");
+    TFile *fout=new TFile (Form("Unfolding_NeuralNetwork_R04_Det_Mar11th.root"),"RECREATE");
     fout->cd();
     h1raw->SetName("raw");
     h1raw->Write();

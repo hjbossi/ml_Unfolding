@@ -1,5 +1,5 @@
 // Hannah Bossi <hannah.bossi@cern.ch>
-// splitMCRefoldedRawRatio.C : Plots the ratio of refolded to raw distributions after the split MC test
+// refoldedRawRatio.C : Plots the ratio of refolded to raw distributions after unfolding
 // 02/13/2020
 
 void refoldedRawRatio(){
@@ -8,7 +8,7 @@ void refoldedRawRatio(){
   gStyle->SetOptTitle(0);
   
   // Get the input file and the relevant objects to make the ratio plots
-  TFile*_file0       = TFile::Open("UnfoldingSplit_AreaBased_R04_Mar10.root");
+  TFile*_file0       = TFile::Open("../Unfolding_NeuralNetwork_R04_Det_Mar11th.root");
   TH1F* rawDist      = (TH1F*)_file0->Get("raw");
   TH1F* refold_Iter1 = (TH1F*)_file0->Get("Bayesian_Foldediter1");
   TH1F* refold_Iter2 = (TH1F*)_file0->Get("Bayesian_Foldediter2");

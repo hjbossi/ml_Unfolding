@@ -6,9 +6,11 @@ void refoldedRawRatio(){
   // plotting styles
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
+  //specifies whether or not to draw the middle iterations.
+  Bool_t onlyMiddleIters = kTRUE; 
   
   // Get the input file and the relevant objects to make the ratio plots
-  TFile*_file0       = TFile::Open("../Unfolding_NeuralNetwork_R04_Det_Mar11th.root");
+  TFile*_file0       = TFile::Open("../Unfolding_NeuralNetwork_R04_Det_Above25_Mar12th.root");
   TH1F* rawDist      = (TH1F*)_file0->Get("raw");
   TH1F* refold_Iter1 = (TH1F*)_file0->Get("Bayesian_Foldediter1");
   TH1F* refold_Iter2 = (TH1F*)_file0->Get("Bayesian_Foldediter2");
@@ -44,13 +46,13 @@ void refoldedRawRatio(){
    refold_Iter1->SetMarkerColor(colors[0]);
    refold_Iter1->SetLineColor(colors[0]);
    refold_Iter1->Scale(1., "width");
-   refold_Iter1->Draw("same");
+   if(!onlyMiddleIters)refold_Iter1->Draw("same");
 
    refold_Iter2->SetMarkerStyle(20);
    refold_Iter2->SetMarkerColor(colors[2]);
    refold_Iter2->SetLineColor(colors[2]);
    refold_Iter2->Scale(1., "width");
-   refold_Iter2->Draw("same");
+   if(!onlyMiddleIters)refold_Iter2->Draw("same");
 
    refold_Iter3->SetMarkerStyle(20);
    refold_Iter3->SetMarkerColor(colors[4]);
@@ -86,13 +88,13 @@ void refoldedRawRatio(){
    refold_Iter8->SetMarkerColor(colors[14]);
    refold_Iter8->SetLineColor(colors[14]);
    refold_Iter8->Scale(1., "width");
-   refold_Iter8->Draw("same");
+   if(!onlyMiddleIters)refold_Iter8->Draw("same");
 
    refold_Iter9->SetMarkerStyle(20);
    refold_Iter9->SetMarkerColor(colors[16]);
    refold_Iter9->SetLineColor(colors[16]);
    refold_Iter9->Scale(1., "width");
-   refold_Iter9->Draw("same");
+   if(!onlyMiddleIters)refold_Iter9->Draw("same");
    
   // want to plot the ratio between the refolded distributions and the raw distribution
   // do this for each of the iterationas on the same plot
@@ -159,36 +161,36 @@ void refoldedRawRatio(){
   pad2->Draw();
   pad2->cd();
   
-  refoldClone_1->GetXaxis()->SetTitle("p_{T} [GeV/#it{c}]");
-  refoldClone_1->GetXaxis()->SetLabelSize(0.08);
-  refoldClone_1->GetXaxis()->SetTitleSize(0.09);
-  refoldClone_1->GetYaxis()->SetTitle("Ratio Refolded/Raw");
-  refoldClone_1->GetYaxis()->SetLabelSize(0.08);
-  refoldClone_1->GetYaxis()->SetTitleSize(0.08);
-  refoldClone_1->GetYaxis()->SetTitleOffset(0.55);
-  refoldClone_1->GetYaxis()->SetRangeUser(0,2);
-  refoldClone_1->Draw();
-  refoldClone_2->Draw("same");
-  refoldClone_3->Draw("same");
+  refoldClone_3->GetXaxis()->SetTitle("p_{T} [GeV/#it{c}]");
+  refoldClone_3->GetXaxis()->SetLabelSize(0.08);
+  refoldClone_3->GetXaxis()->SetTitleSize(0.09);
+  refoldClone_3->GetYaxis()->SetTitle("Ratio Refolded/Raw");
+  refoldClone_3->GetYaxis()->SetLabelSize(0.08);
+  refoldClone_3->GetYaxis()->SetTitleSize(0.08);
+  refoldClone_3->GetYaxis()->SetTitleOffset(0.55);
+  refoldClone_3->GetYaxis()->SetRangeUser(0.8,1.2);
+  refoldClone_3->Draw();
+  if(!onlyMiddleIters)refoldClone_2->Draw("same");
+  if(!onlyMiddleIters)refoldClone_1->Draw("same");
   refoldClone_4->Draw("same");
   refoldClone_5->Draw("same");
   refoldClone_6->Draw("same");
   refoldClone_7->Draw("same");
-  refoldClone_8->Draw("same");
-  refoldClone_9->Draw("same");
+  if(!onlyMiddleIters)refoldClone_8->Draw("same");
+  if(!onlyMiddleIters)refoldClone_9->Draw("same");
 
   TLegend* leg = new TLegend(0.7, 0.5, 0.9, 0.9);
   leg->SetTextSize(0.04);
   leg->AddEntry(rawDist, "Raw");
-  leg->AddEntry(refoldClone_1, "Iteration 1");
-  leg->AddEntry(refoldClone_2, "Iteration 2");
+  if(!onlyMiddleIters)leg->AddEntry(refoldClone_1, "Iteration 1");
+  if(!onlyMiddleIters)leg->AddEntry(refoldClone_2, "Iteration 2");
   leg->AddEntry(refoldClone_3, "Iteration 3");
   leg->AddEntry(refoldClone_4, "Iteration 4");
   leg->AddEntry(refoldClone_5, "Iteration 5");
   leg->AddEntry(refoldClone_6, "Iteration 6");
   leg->AddEntry(refoldClone_7, "Iteration 7");
-  leg->AddEntry(refoldClone_8, "Iteration 8");
-  leg->AddEntry(refoldClone_9, "Iteration 9");
+  if(!onlyMiddleIters)leg->AddEntry(refoldClone_8, "Iteration 8");
+  if(!onlyMiddleIters)leg->AddEntry(refoldClone_9, "Iteration 9");
   pad1->cd();
   leg->Draw("same");
 

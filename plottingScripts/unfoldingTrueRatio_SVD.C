@@ -1,9 +1,9 @@
 
 // Hannah Bossi <hannah.bossi@cern.ch>
-// unfoldingTrueRatio.C : Plots the ratio of unfolded distributions to the fifth iteration
+// unfoldingTrueRatio_SVD.C : Plots the ratio of unfolded distributions to k = 4
 // 02/13/2020
 
-void unfoldingTrueRatio(){
+void unfoldingTrueRatio_SVD(){
   // plotting styles
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
@@ -11,19 +11,20 @@ void unfoldingTrueRatio(){
   Bool_t correctForEff = kTRUE;
   // draw only the middle four iterations. 
   Bool_t drawMiddle4   = kTRUE; 
+  Bool_t plotRecRange  = kFALSE; //whether or not to only show the range we will end up reporting 
   
   // Get the input file and the relevant objects to make the ratio plots
-  TFile*_file0       = TFile::Open("../Unfolding_NeuralNetwork_R04_Part_Above25_Mar12th.root");
+  TFile*_file0       = TFile::Open("../Unfolding_NeuralNetwork_R04_Part_SVD_Mar13th.root");
   TH1F* trueDist     = (TH1F*)_file0->Get("true");
-  TH1F* unfold_Iter1 = (TH1F*)_file0->Get("Bayesian_Unfoldediter1");
-  TH1F* unfold_Iter2 = (TH1F*)_file0->Get("Bayesian_Unfoldediter2");
-  TH1F* unfold_Iter3 = (TH1F*)_file0->Get("Bayesian_Unfoldediter3");
-  TH1F* unfold_Iter4 = (TH1F*)_file0->Get("Bayesian_Unfoldediter4");
-  TH1F* unfold_Iter5 = (TH1F*)_file0->Get("Bayesian_Unfoldediter5");
-  TH1F* unfold_Iter6 = (TH1F*)_file0->Get("Bayesian_Unfoldediter6");
-  TH1F* unfold_Iter7 = (TH1F*)_file0->Get("Bayesian_Unfoldediter7");
-  TH1F* unfold_Iter8 = (TH1F*)_file0->Get("Bayesian_Unfoldediter8");
-  TH1F* unfold_Iter9 = (TH1F*)_file0->Get("Bayesian_Unfoldediter9");
+  TH1F* unfold_Iter1 = (TH1F*)_file0->Get("SVD_Unfolded_KValue_1");
+  TH1F* unfold_Iter2 = (TH1F*)_file0->Get("SVD_Unfolded_KValue_2");
+  TH1F* unfold_Iter3 = (TH1F*)_file0->Get("SVD_Unfolded_KValue_3");
+  TH1F* unfold_Iter4 = (TH1F*)_file0->Get("SVD_Unfolded_KValue_4");
+  TH1F* unfold_Iter5 = (TH1F*)_file0->Get("SVD_Unfolded_KValue_5");
+  TH1F* unfold_Iter6 = (TH1F*)_file0->Get("SVD_Unfolded_KValue_6");
+  TH1F* unfold_Iter7 = (TH1F*)_file0->Get("SVD_Unfolded_KValue_7");
+  TH1F* unfold_Iter8 = (TH1F*)_file0->Get("SVD_Unfolded_KValue_8");
+  TH1F* unfold_Iter9 = (TH1F*)_file0->Get("SVD_Unfolded_KValue_9");
   TH1F* effnum       = (TH1F*)_file0->Get("htruth"); // numerator for kinematic efficiecny
   TH1F* effdenom     = (TH1F*)_file0->Get("trueptd");// denominator for kinematic efficiency
   effnum->Divide(effdenom);
@@ -50,7 +51,7 @@ void unfoldingTrueRatio(){
      }
    }
    trueDist->Scale(1./trueDist->Integral(), "width");
-   trueDist->GetXaxis()->SetRangeUser(40,120);
+   if(plotRecRange)trueDist->GetXaxis()->SetRangeUser(40,120);
    trueDist->Draw();
 
    unfold_Iter1->SetMarkerStyle(20);
@@ -221,12 +222,12 @@ void unfoldingTrueRatio(){
   unfoldClone_3->GetXaxis()->SetTitle("p_{T} [GeV/#it{c}]");
   unfoldClone_3->GetXaxis()->SetLabelSize(0.08);
   unfoldClone_3->GetXaxis()->SetTitleSize(0.09);
-  unfoldClone_3->GetYaxis()->SetTitle("Ratio Unfolded/Unfolded Iter 5");
+  unfoldClone_3->GetYaxis()->SetTitle("Ratio Unfolded/Unfolded k = 5");
   unfoldClone_3->GetYaxis()->SetLabelSize(0.06);
   unfoldClone_3->GetYaxis()->SetTitleSize(0.08);
   unfoldClone_3->GetYaxis()->SetTitleOffset(0.55);
   unfoldClone_3->GetYaxis()->SetRangeUser(0.8, 1.2);
-  unfoldClone_3->GetXaxis()->SetRangeUser(40,120);
+  if(plotRecRange)unfoldClone_3->GetXaxis()->SetRangeUser(40,120);
   unfoldClone_3->Draw();
   if(!drawMiddle4)unfoldClone_2->Draw("same");
   if(!drawMiddle4)unfoldClone_1->Draw("same");
@@ -241,15 +242,15 @@ void unfoldingTrueRatio(){
   TLegend* leg = new TLegend(0.7, 0.5, 0.9, 0.9);
   leg->SetTextSize(0.04);
   leg->AddEntry(trueDist, "True");
-  if(!drawMiddle4)leg->AddEntry(unfoldClone_1, "Iteration 1");
-  if(!drawMiddle4)leg->AddEntry(unfoldClone_2, "Iteration 2");
-  leg->AddEntry(unfoldClone_3, "Iteration 3");
-  leg->AddEntry(unfoldClone_4, "Iteration 4");
-  leg->AddEntry(unfoldClone_5, "Iteration 5");
-  leg->AddEntry(unfoldClone_6, "Iteration 6");
-  leg->AddEntry(unfoldClone_7, "Iteration 7");
-  if(!drawMiddle4)leg->AddEntry(unfoldClone_8, "Iteration 8");
-  if(!drawMiddle4)leg->AddEntry(unfoldClone_9, "Iteration 9");
+  if(!drawMiddle4)leg->AddEntry(unfoldClone_1, "k = 1");
+  if(!drawMiddle4)leg->AddEntry(unfoldClone_2, "k = 2");
+  leg->AddEntry(unfoldClone_3, "k = 3");
+  leg->AddEntry(unfoldClone_4, "k = 4");
+  leg->AddEntry(unfoldClone_5, "k = 5");
+  leg->AddEntry(unfoldClone_6, "k = 6");
+  leg->AddEntry(unfoldClone_7, "k = 7");
+  if(!drawMiddle4)leg->AddEntry(unfoldClone_8, "k = 8");
+  if(!drawMiddle4)leg->AddEntry(unfoldClone_9, "k = 9");
   pad1->cd();
   leg->Draw("same");
 

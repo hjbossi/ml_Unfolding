@@ -9,11 +9,11 @@
 //
 //==============================================================================
 
-/*
-  RooSimplepTPbPb_AB.cxx : Unfolds data corrected using the area based method. Data/MC comes directly from jet extractor output.
-  Hannah Bossi <hannah.bossi@yale.edu>
-  3/11/2020
- */
+
+// RooSimplepTPbPb_ML_SVD.cxx: Script to unfold the ML corrected data, using SVD unfolding
+// Hannah Bossi <hannah.bossi@yale.edu>
+// 3/13/2020
+
 
 
 
@@ -44,6 +44,7 @@ using std::endl;
 
 #include "RooUnfoldResponse.h"
 #include "RooUnfoldBayes.h"
+#include "RooUnfoldSvd.h"
 //#include "RooUnfoldTestHarness2D.h"
 #endif
 
@@ -155,7 +156,7 @@ TH2D* CorrelationHist (const TMatrixD& cov,const char* name, const char* title,
 // Example Unfolding
 //==============================================================================
 
-void RooSimplepTPbPb_AB(TString cFiles2="files1.txt")
+void RooSimplepTPbPb_ML_SVD(TString cFiles2="filesML.txt")
 {
 #ifdef __CINT__
   gSystem->Load("libRooUnfold");
@@ -171,28 +172,33 @@ void RooSimplepTPbPb_AB(TString cFiles2="files1.txt")
    //***************************************************
 
   Double_t xbins[14];
-  xbins[0]=5;
-  xbins[1]=10;
-  xbins[2]=20;
-  xbins[3]=30;
-  xbins[4]=40;
-  xbins[5]=50;
-  xbins[6]=60;
-  xbins[7]=70;
-  xbins[8]=80;
+  xbins[0]=10;
+  xbins[1]=20;
+  xbins[2]=30;
+  xbins[3]=40;
+  xbins[4]=50;
+  xbins[5]=60;
+  xbins[6]=70;
+  xbins[7]=80;
+  xbins[8]=90;
   xbins[9]=100;
   xbins[10]=120;
   xbins[11]=140;
   xbins[12]=190;
   xbins[13]=250;
-  
+   
   //the raw correlation (data or psuedodata)
   TH1F *h1raw(0);
-  h1raw=new TH1F("r","raw", 17, 35, 120);
+  h1raw=new TH1F("r","raw", 19, 25, 120);
+
   //detector measure level (reco or hybrid MC)
   TH1F *h1smeared(0);
-  h1smeared=new TH1F("smeared","smeared",17, 35, 120);
+  h1smeared=new TH1F("smeared","smeared",19, 25, 120);
 
+  // full range of reco
+  TH1F *h1smearedFullRange(0);
+  h1smearedFullRange = new TH1F("smearedFull", "smearedFull", 220, -20,200);
+    
   //detector measure level no cuts
   TH1F *h1smearednocuts(0);
   h1smearednocuts=new TH1F("smearednocuts","smearednocuts", 13, xbins);
@@ -202,7 +208,6 @@ void RooSimplepTPbPb_AB(TString cFiles2="files1.txt")
   //full true correlation
   TH1F *h1fulleff(0);
   h1fulleff=new TH1F("truef","truef", 13, xbins); 
-
   
   TH2F *hcovariance(0);
   hcovariance=new TH2F("covariance","covariance",10,0.,1.,10,0,1.);
@@ -210,136 +215,86 @@ void RooSimplepTPbPb_AB(TString cFiles2="files1.txt")
   TH2F *effnum=(TH2F*)h1fulleff->Clone("effnum");
   TH2F *effdenom=(TH2F*)h1fulleff->Clone("effdenom");
  
-  effnum->Sumw2();
-  effdenom->Sumw2();
-  h1smeared->Sumw2();
-  h1true->Sumw2();
-  h1raw->Sumw2();
-  h1fulleff->Sumw2();
+   effnum->Sumw2();
+   effdenom->Sumw2();
+   h1smeared->Sumw2();
+   h1smearedFullRange->Sumw2(); 
+   h1true->Sumw2();
+   h1raw->Sumw2();
+   h1fulleff->Sumw2();
 
-  //branches in the tree that you need in this analysis
-  Float_t ptJet,ptJetMatch, pTRec, ptdet;
-  Float_t centData, cent;
-  Int_t nEv=0;; 
-  //so mcr is correctly normalized to one, not the response.       
-  cout<<"cucu"<<endl;
-
-  
-  ifstream infile2;
-  infile2.open(cFiles2.Data());
-  char filename2[300];
-  RooUnfoldResponse response;
-  RooUnfoldResponse responsenotrunc;
-  response.Setup(h1smeared,h1true);
-  responsenotrunc.Setup(h1smearednocuts,h1fulleff);
-
-  TFile *input1=TFile::Open("/home/hbossi/alidock/data/Data_031020/AnalysisResults.root");
-  TTree *data=(TTree*)input1->Get("JetTree_AliAnalysisTaskJetExtractor_Jets_AKTFullR040_tracks_pT0150_caloClusters_E0300_pt_scheme_Rho_Scaled_Jets");
-  Int_t nEvents=data->GetEntries();
-  std::cout << nEvents << std::endl;
-  data->SetBranchAddress("Jet_Pt", &pTRec);
-  data->SetBranchAddress("Event_Centrality", &centData); 
-  Int_t numTracksData;
-  Float_t jetTrackPtData[400];
-  data->SetBranchAddress("Jet_Track_Pt", &jetTrackPtData);
-  data->SetBranchAddress("Jet_NumTracks", &numTracksData);
-  for(Int_t i = 0; i < nEvents; i++){
-    data->GetEntry(i);
-    Double_t maxPtData = 0;
-    Bool_t highPtTrack = kFALSE; 
-    for(Int_t index = 0; index < numTracksData; index++){
-      if(jetTrackPtData[index] > maxPtData){
-	maxPtData = jetTrackPtData[index];
-      }
-      if(jetTrackPtData[index] > 100) {
-	highPtTrack = kTRUE;
-	//std::cout << "Track greater than 100" << std::endl;
-      }
-    }
-    //std::cout << "max track pt : " << maxPtData << " JetPt: " << pTRec << std::endl;
-    if(maxPtData < 7.0 ) continue;
-    if(highPtTrack){
-      //std::cout << "rejecting" << std::endl;
-      continue;
-    }
-    if(centData > 10) continue; 
-    if(pTRec>120 || pTRec<35) continue;
-    h1raw->Fill(pTRec);
-  }
-
-  
-    while(infile2>>filename2){
-    int pthardbin=0;
+   //branches in the tree that you need in this analysis
+   // we need the hybrid Pt to determine what EB scaling factor
+   Float_t ptJetMatch, hybridPt;
+   Double_t ptJet, leadingTrackPtData, leadingTrackPt;
+   Long64_t pTHardBin; // we are getting the pt hard bin from the tree this time
+   Float_t cent;
+   Double_t pTRec; // ml corrected data 
    
-    TFile *input=TFile::Open(filename2);
-    TList *list=(TList*) input->Get("AliAnalysisTaskEmcalEmbeddingHelper_histos");
-    TList *list2=(TList*) list->FindObject("EventCuts");
-    TH1D *hcent=(TH1D*)list2->FindObject("Centrality_selected");
-    TProfile *hcross=(TProfile*)list->FindObject("fHistXsection");
-    TH1D *htrials=(TH1D*)list->FindObject("fHistTrials");
-    TH1D *hpthard=(TH1D*)list->FindObject("fHistPtHard");
-    TH1D *hnevent=(TH1D*)list->FindObject("fHistEventCount");
-    for(Int_t i=1;i<=htrials->GetNbinsX();i++){
-      if(htrials->GetBinContent(i)!=0) pthardbin=i;}
-    double pTHardscalefactor=(hcross->Integral(pthardbin,pthardbin)*hcross->GetEntries())/htrials->Integral(pthardbin,pthardbin);
-    std::cout << "pT Hard Bin: " << pthardbin << "with scaling factor " << pTHardscalefactor << std::endl;
-    TFile *input2=TFile::Open(filename2);
-    TTree *mc=(TTree*)input2->Get("JetTree_AliAnalysisTaskJetExtractor_hybridLevelJets_AKTFullR040_tracks_pT0150_caloClustersCombined_E0300_pt_scheme_Rho_Scaled_hybridLevelJets"); 
-    Int_t nEv=mc->GetEntries(); 
-    Int_t numTracks;
-    mc->SetBranchAddress("Jet_Pt", &ptJet);
-    mc->SetBranchAddress("Event_Centrality", &cent);
-    mc->SetBranchAddress("Jet_MC_MatchedPartLevelJet_Pt", &ptJetMatch);
-    //mc->SetBranchAddress("Jet_MC_MatchedDetLevelJet_Pt", &ptdet);
-    mc->SetBranchAddress("Jet_NumTracks", &numTracks);
-    Float_t jetTrackPt[400];
-    mc->SetBranchAddress("Jet_Track_Pt", &jetTrackPt);
+   //so mcr is correctly normalized to one, not the response.       
+   cout<<"cucu"<<endl;
+   RooUnfoldResponse response;
+   RooUnfoldResponse responsenotrunc;
+   response.Setup(h1smeared,h1true);
+   responsenotrunc.Setup(h1smearednocuts,h1fulleff);
 
-    Int_t countm=0;
-    for(int iEntry=0; iEntry< nEv; iEntry++){
-      mc->GetEntry(iEntry);
-      if(cent > 10) continue;
-      double scalefactor = pTHardscalefactor;
-      double EBscale = 1.;
-      // put in if/else statements on the ptJet
-      if(ptJet >= -20. && ptJet < 10.)       EBscale = 10.;
-      else if(ptJet >= 10. && ptJet < 20.)   EBscale = 10.;
-      else if(ptJet >= 20. && ptJet < 40.)   EBscale = 2.5;
-      else if(ptJet >= 40. && ptJet < 60.)   EBscale = 1.25;
-      else if(ptJet >= 60. && ptJet < 80.)   EBscale = 1.111;
-      else if(ptJet >= 80. && ptJet < 100.)  EBscale = 1.111;
-      else if(ptJet >= 100. && ptJet < 500.) EBscale = 1.0;
+   
+   TFile *input1=TFile::Open("/home/hbossi/alidock/ml-background/PredictionTrees/predictionTree_NeuralNetwork_For_LHC15o_R040.root");
+   TTree *data=(TTree*)input1->Get("predictionTree_NeuralNetwork_LHC15o_R040");
+   Int_t nEvents=data->GetEntries();
+   std::cout << nEvents << std::endl;
+   data->SetBranchAddress("Predicted_Jet_Pt", &pTRec);
+   data->SetBranchAddress("Jet_TrackPt0", &leadingTrackPtData); 
+   for(Int_t i = 0; i < nEvents; i++){
+     data->GetEntry(i);
+     if(leadingTrackPtData > 100) continue; 
+     if(pTRec>120 || pTRec<25) continue;
+     h1raw->Fill(pTRec); 
+   }
+   // previously derived pT hard bin scaling factors INCLUDING rk. index with PtHardBin Branch
+   Double_t scalingFactors[20] = {0.492069, 0.418282, 0.405473, 0.265289, 0.133235, 0.0642945, 0.0229219, 0.008419, 0.00360539, 0.00122459, 0.000494578, 0.000177912, 8.83422e-05, 4.28423e-05, 2.03583e-05, 1.03874e-05, 5.68744e-06, 2.99194e-06, 1.59651e-06, 2.09335e-06};
 
-      scalefactor*=EBscale;
-      //std::cout << ptJetMatch << std::endl;
-      // LTB
-      Double_t maxPt = 0;
-      Bool_t highPtTrack2 = kFALSE; 
-      for(Int_t index = 0; index < numTracks; index++){
-	if(jetTrackPt[index] > maxPt){
-	  maxPt = jetTrackPt[index];
-	}
-	if(jetTrackPt[index]  > 100) highPtTrack2 = kTRUE; 
-      }
-      // apply a 7 GeV leading track bias
-      if(maxPt < 7.0 ) continue;
-      if(highPtTrack2) continue;
-      if(ptJetMatch> 250. || ptJetMatch < 5.) continue;
-    
-      h1fulleff->Fill(ptJetMatch,scalefactor);  
-      h1smearednocuts->Fill(ptJet,scalefactor);  
-      responsenotrunc.Fill(ptJet,ptJetMatch,scalefactor);
+   TFile *input2=TFile::Open("/home/hbossi/alidock/ml-background/PredictionTrees/predictionTree_NeuralNetwork_For_LHC16j5_Embedded_R040.root");
+   TTree *mc=(TTree*)input2->Get("predictionTree_NeuralNetwork_LHC16j5_Embedded_R040"); 
+   Int_t nEv=mc->GetEntries(); 
+   // get the jet pT predicted by the ml
+   mc->SetBranchAddress("Predicted_Jet_Pt", &ptJet); 
+   mc->SetBranchAddress("Jet_MC_MatchedPartLevelJet_Pt", &ptJetMatch);
+   mc->SetBranchAddress("PtHardBin", &pTHardBin);
+   mc->SetBranchAddress("Jet_Pt", &hybridPt);
+   mc->SetBranchAddress("Event_Centrality", &cent);
+   mc->SetBranchAddress("Jet_TrackPt0", &leadingTrackPt); 
+   Int_t countm=0;
+   for(int iEntry=0; iEntry< nEv; iEntry++){
+     mc->GetEntry(iEntry);
+     if (cent > 10) continue;
+     if (leadingTrackPt > 100) continue; 
+     double scalefactor = scalingFactors[pTHardBin-1];
+     double EBscale = 1.;
+     // put in if/else statements on the ptJet 
+     if(hybridPt >= -20. && hybridPt < 10.)       EBscale = 10.;
+     else if(hybridPt >= 10. && hybridPt < 20.)   EBscale = 10.;
+     else if(hybridPt >= 20. && hybridPt < 40.)   EBscale = 2.5;
+     else if(hybridPt >= 40. && hybridPt < 60.)   EBscale = 1.25;
+     else if(hybridPt >= 60. && hybridPt < 80.)   EBscale = 1.111;
+     else if(hybridPt >= 80. && hybridPt < 100.)  EBscale = 1.111;
+     else if(hybridPt >= 100. && hybridPt < 500.) EBscale = 1.0;
+
+     scalefactor*=EBscale; 
+     if(ptJetMatch < 10 ) continue;
+     h1fulleff->Fill(ptJetMatch,scalefactor);  
+     h1smearedFullRange->Fill(ptJet, scalefactor);
+     h1smearednocuts->Fill(ptJet,scalefactor);  
+     responsenotrunc.Fill(ptJet,ptJetMatch,scalefactor);
+     if(hybridPt < 10) continue;
+     if(ptJet>120 || ptJet<25) continue;
+     h1smeared->Fill(ptJet,scalefactor);
+     //this is the half split to be the response 
+     response.Fill(ptJet, ptJetMatch,scalefactor);
+     //this is the generator level distribution for the pseudo data or our answer :)
+     h1true->Fill(ptJetMatch,scalefactor);
       
-      if(ptJet>120 || ptJet<35) continue;
-      h1smeared->Fill(ptJet,scalefactor);
-      //this is the half split to be the response 
-      response.Fill(ptJet, ptJetMatch,scalefactor);
-      //this is the psuedo data!
-      //h1raw->Fill(ptJet, scalefactor);
-      //this is the generator level distribution for the pseudo data or our answer :)
-      h1true->Fill(ptJetMatch,scalefactor);
-      
-    }}
+   }
  
 
     
@@ -347,37 +302,37 @@ void RooSimplepTPbPb_AB(TString cFiles2="files1.txt")
     TH1F *htruept=(TH1F*) h1fulleff->Clone( "truept"); 
  
     //////////efficiencies done////////////////////////////////////
-    TString filename = "Unfolding_Part_AreaBased_R04_LTC_Mar10.root"; 
-    TFile *fout=new TFile (filename,"RECREATE");
+ 
+    TFile *fout=new TFile (Form("Unfolding_NeuralNetwork_R04_Part_SVD_Mar13th.root"),"RECREATE");
     fout->cd();
     h1raw->SetName("raw");
     h1raw->Write();
     h1smeared->SetName("smeared");
     h1smeared->Write();
+    h1smearedFullRange->Write();
     htrueptd->Write();
     h1true->SetName("true");
     h1true->Write();
+    response.Write();
     TH1D* htruth = (TH1D*)response.Htruth();
     htruth->SetName("htruth");
     htruth->Write();
-    response.Write();
-
-
+    // begin SVD unfolding, this is where the differences may be
     for(int jar=1;jar<10;jar++){
       Int_t iter=jar;
-      cout<<"iteration"<<iter<<endl;
+      cout<<"k value of "<<iter<<endl;
       cout<<"==============Unfold h1====================="<<endl;
 
-      RooUnfoldBayes unfold(&response, h1raw, iter, false);    // OR
+      RooUnfoldSvd unfold(&response, h1raw, iter);    // OR
       TH1D* hunf= (TH1D*) unfold.Hreco(errorTreatment);
       //FOLD BACK
       TH1* hfold = response.ApplyToTruth (hunf, "");
 
       TH2D *htempUnf=(TH2D*)hunf->Clone("htempUnf");          
-      htempUnf->SetName(Form("Bayesian_Unfoldediter%d",iter));
+      htempUnf->SetName(Form("SVD_Unfolded_KValue_%d",iter));
       
       TH2D *htempFold=(TH2D*)hfold->Clone("htempFold");          
-      htempFold->SetName(Form("Bayesian_Foldediter%d",iter));        
+      htempFold->SetName(Form("SVD_Folded_KValue_%d",iter));        
 
       htempUnf->Write();
       htempFold->Write();
@@ -406,5 +361,5 @@ void RooSimplepTPbPb_AB(TString cFiles2="files1.txt")
 	  
 }
 #ifndef __CINT__
-int main () { RooSimplepTPbPb_AB(); return 0; }  // Main program when run stand-alone
+int main () { RooSimplepTPbPb_ML_SVD(); return 0; }  // Main program when run stand-alone
 #endif

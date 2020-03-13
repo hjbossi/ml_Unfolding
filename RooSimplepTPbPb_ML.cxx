@@ -188,11 +188,11 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
    
   //the raw correlation (data or psuedodata)
   TH1F *h1raw(0);
-  h1raw=new TH1F("r","raw", 17, 35, 120);
+  h1raw=new TH1F("r","raw", 19, 25, 120);
 
   //detector measure level (reco or hybrid MC)
   TH1F *h1smeared(0);
-  h1smeared=new TH1F("smeared","smeared",17, 35, 120);
+  h1smeared=new TH1F("smeared","smeared",19, 25, 120);
 
   // full range of reco
   TH1F *h1smearedFullRange(0);
@@ -225,8 +225,7 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
    //branches in the tree that you need in this analysis
    // we need the hybrid Pt to determine what EB scaling factor
    Float_t ptJetMatch, hybridPt;
-   
-   Double_t ptJet;
+   Double_t ptJet, leadingTrackPtData, leadingTrackPt;
    Long64_t pTHardBin; // we are getting the pt hard bin from the tree this time
    Float_t cent;
    Double_t pTRec; // ml corrected data 
@@ -239,14 +238,16 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
    responsenotrunc.Setup(h1smearednocuts,h1fulleff);
 
    
-   TFile *input1=TFile::Open("/home/hbossi/alidock/ml-background/PredictionTrees/predictionTree_NeuralNetwork_For_LHC15o_040_031020.root");
-   TTree *data=(TTree*)input1->Get("NeuralNetwork_For_LHC15o_R040");
+   TFile *input1=TFile::Open("/home/hbossi/alidock/ml-background/PredictionTrees/predictionTree_NeuralNetwork_For_LHC15o_R040.root");
+   TTree *data=(TTree*)input1->Get("predictionTree_NeuralNetwork_LHC15o_R040");
    Int_t nEvents=data->GetEntries();
    std::cout << nEvents << std::endl;
-   data->SetBranchAddress("Jet_MC_MatchedDetLevelJet_Pt", &pTRec);
+   data->SetBranchAddress("Predicted_Jet_Pt", &pTRec);
+   data->SetBranchAddress("Jet_TrackPt0", &leadingTrackPtData); 
    for(Int_t i = 0; i < nEvents; i++){
      data->GetEntry(i);
-     if(pTRec>120 || pTRec<35) continue;
+     if(leadingTrackPtData > 100) continue; 
+     if(pTRec>120 || pTRec<25) continue;
      h1raw->Fill(pTRec); 
    }
    // previously derived pT hard bin scaling factors INCLUDING rk. index with PtHardBin Branch
@@ -257,15 +258,16 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
    Int_t nEv=mc->GetEntries(); 
    // get the jet pT predicted by the ml
    mc->SetBranchAddress("Predicted_Jet_Pt", &ptJet); 
-   mc->SetBranchAddress("Jet_MC_MatchedDetLevelJet_Pt", &ptJetMatch);
+   mc->SetBranchAddress("Jet_MC_MatchedPartLevelJet_Pt", &ptJetMatch);
    mc->SetBranchAddress("PtHardBin", &pTHardBin);
    mc->SetBranchAddress("Jet_Pt", &hybridPt);
    mc->SetBranchAddress("Event_Centrality", &cent);
-   
+   mc->SetBranchAddress("Jet_TrackPt0", &leadingTrackPt); 
    Int_t countm=0;
    for(int iEntry=0; iEntry< nEv; iEntry++){
      mc->GetEntry(iEntry);
      if (cent > 10) continue;
+     if (leadingTrackPt > 100) continue; 
      double scalefactor = scalingFactors[pTHardBin-1];
      double EBscale = 1.;
      // put in if/else statements on the ptJet 
@@ -278,18 +280,16 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
      else if(hybridPt >= 100. && hybridPt < 500.) EBscale = 1.0;
 
      scalefactor*=EBscale; 
-     if(ptJetMatch < 10) continue;
+     if(ptJetMatch < 10 ) continue;
      h1fulleff->Fill(ptJetMatch,scalefactor);  
      h1smearedFullRange->Fill(ptJet, scalefactor);
      h1smearednocuts->Fill(ptJet,scalefactor);  
      responsenotrunc.Fill(ptJet,ptJetMatch,scalefactor);
      if(hybridPt < 10) continue;
-     if(ptJet>120 || ptJet<35) continue;
+     if(ptJet>120 || ptJet<25) continue;
      h1smeared->Fill(ptJet,scalefactor);
      //this is the half split to be the response 
      response.Fill(ptJet, ptJetMatch,scalefactor);
-     //this is the psuedo data! //
-     //h1raw->Fill(ptJet, scalefactor);
      //this is the generator level distribution for the pseudo data or our answer :)
      h1true->Fill(ptJetMatch,scalefactor);
       
@@ -302,7 +302,7 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
  
     //////////efficiencies done////////////////////////////////////
  
-    TFile *fout=new TFile (Form("Unfolding_NeuralNetwork_R04_Det_Mar11th.root"),"RECREATE");
+    TFile *fout=new TFile (Form("Unfolding_NeuralNetwork_R04_Part_Above25_Mar12th.root"),"RECREATE");
     fout->cd();
     h1raw->SetName("raw");
     h1raw->Write();

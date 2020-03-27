@@ -13,19 +13,19 @@ void unfoldingTrueRatio(){
   Bool_t drawMiddle4   = kTRUE; 
   
   // Get the input file and the relevant objects to make the ratio plots
-  TFile*_file0       = TFile::Open("../Unfolding_NeuralNetwork_R04_Part_Above25_Mar12th.root");
-  TH1F* trueDist     = (TH1F*)_file0->Get("true");
-  TH1F* unfold_Iter1 = (TH1F*)_file0->Get("Bayesian_Unfoldediter1");
-  TH1F* unfold_Iter2 = (TH1F*)_file0->Get("Bayesian_Unfoldediter2");
-  TH1F* unfold_Iter3 = (TH1F*)_file0->Get("Bayesian_Unfoldediter3");
-  TH1F* unfold_Iter4 = (TH1F*)_file0->Get("Bayesian_Unfoldediter4");
-  TH1F* unfold_Iter5 = (TH1F*)_file0->Get("Bayesian_Unfoldediter5");
-  TH1F* unfold_Iter6 = (TH1F*)_file0->Get("Bayesian_Unfoldediter6");
-  TH1F* unfold_Iter7 = (TH1F*)_file0->Get("Bayesian_Unfoldediter7");
-  TH1F* unfold_Iter8 = (TH1F*)_file0->Get("Bayesian_Unfoldediter8");
-  TH1F* unfold_Iter9 = (TH1F*)_file0->Get("Bayesian_Unfoldediter9");
-  TH1F* effnum       = (TH1F*)_file0->Get("htruth"); // numerator for kinematic efficiecny
-  TH1F* effdenom     = (TH1F*)_file0->Get("trueptd");// denominator for kinematic efficiency
+  TFile*_file0       = TFile::Open("../Unfolding_NeuralNetwork_Mar26th_FullStats_Part.root ");
+  TH1D* trueDist     = (TH1D*)_file0->Get("true");
+  TH1D* unfold_Iter1 = (TH1D*)_file0->Get("Bayesian_Unfoldediter1");
+  TH1D* unfold_Iter2 = (TH1D*)_file0->Get("Bayesian_Unfoldediter2");
+  TH1D* unfold_Iter3 = (TH1D*)_file0->Get("Bayesian_Unfoldediter3");
+  TH1D* unfold_Iter4 = (TH1D*)_file0->Get("Bayesian_Unfoldediter4");
+  TH1D* unfold_Iter5 = (TH1D*)_file0->Get("Bayesian_Unfoldediter5");
+  TH1D* unfold_Iter6 = (TH1D*)_file0->Get("Bayesian_Unfoldediter6");
+  TH1D* unfold_Iter7 = (TH1D*)_file0->Get("Bayesian_Unfoldediter7");
+  TH1D* unfold_Iter8 = (TH1D*)_file0->Get("Bayesian_Unfoldediter8");
+  TH1D* unfold_Iter9 = (TH1D*)_file0->Get("Bayesian_Unfoldediter9");
+  TH1D* effnum       = (TH1D*)_file0->Get("htruth"); // numerator for kinematic efficiecny
+  TH1D* effdenom     = (TH1D*)_file0->Get("trueptd");// denominator for kinematic efficiency
   effnum->Divide(effdenom);
   
   int colors[20] = {kRed+2, kRed-4, kOrange+7, kOrange, kYellow-4, kSpring+10, kSpring, kGreen-3, kGreen+3, kTeal-7, kTeal, kAzure+10, kAzure-4, kBlue+2, kViolet+8, kViolet-1, kMagenta+1, kMagenta-4, kPink+7, kPink-4};
@@ -50,7 +50,7 @@ void unfoldingTrueRatio(){
      }
    }
    trueDist->Scale(1./trueDist->Integral(), "width");
-   trueDist->GetXaxis()->SetRangeUser(40,120);
+   //trueDist->GetXaxis()->SetRangeUser(40,120);
    trueDist->Draw();
 
    unfold_Iter1->SetMarkerStyle(20);
@@ -155,55 +155,55 @@ void unfoldingTrueRatio(){
   // want to plot the ratio between the unfolded distributions and the raw distribution
   // do this for each of the iterationas on the same plot
   // process in general goes as (1) Clone numerator (2) Sumw2 (3) Divide by denominator
-  TH1F* unfoldClone_1 = (TH1F*) unfold_Iter1->Clone();
+  TH1D* unfoldClone_1 = (TH1D*) unfold_Iter1->Clone();
   unfoldClone_1->Sumw2();
   unfoldClone_1->Divide(unfold_Iter5);
   unfoldClone_1->SetMarkerStyle(20);
   unfoldClone_1->SetMarkerColor(colors[0]);
 
-  TH1F* unfoldClone_2 = (TH1F*) unfold_Iter2->Clone();
+  TH1D* unfoldClone_2 = (TH1D*) unfold_Iter2->Clone();
   unfoldClone_2->Sumw2();
   unfoldClone_2->Divide(unfold_Iter5);
   unfoldClone_2->SetMarkerStyle(20);
   unfoldClone_2->SetMarkerColor(colors[2]);
 
-  TH1F* unfoldClone_3 = (TH1F*) unfold_Iter3->Clone();
+  TH1D* unfoldClone_3 = (TH1D*) unfold_Iter3->Clone();
   unfoldClone_3->Sumw2();
   unfoldClone_3->Divide(unfold_Iter5);
   unfoldClone_3->SetMarkerStyle(20);
   unfoldClone_3->SetMarkerColor(colors[4]);
   
-  TH1F* unfoldClone_4 = (TH1F*) unfold_Iter4->Clone();
+  TH1D* unfoldClone_4 = (TH1D*) unfold_Iter4->Clone();
   unfoldClone_4->Sumw2();
   unfoldClone_4->Divide(unfold_Iter5);
   unfoldClone_4->SetMarkerStyle(20);
   unfoldClone_4->SetMarkerColor(colors[6]);
 
-  TH1F* unfoldClone_5 = (TH1F*) unfold_Iter5->Clone();
+  TH1D* unfoldClone_5 = (TH1D*) unfold_Iter5->Clone();
   unfoldClone_5->Sumw2();
   unfoldClone_5->Divide(unfold_Iter5);
   unfoldClone_5->SetMarkerStyle(20);
   unfoldClone_5->SetMarkerColor(colors[8]);
   
-  TH1F* unfoldClone_6 = (TH1F*) unfold_Iter6->Clone();
+  TH1D* unfoldClone_6 = (TH1D*) unfold_Iter6->Clone();
   unfoldClone_6->Sumw2();
   unfoldClone_6->Divide(unfold_Iter5);
   unfoldClone_6->SetMarkerStyle(20);
   unfoldClone_6->SetMarkerColor(colors[10]);
 
-  TH1F* unfoldClone_7 = (TH1F*) unfold_Iter7->Clone();
+  TH1D* unfoldClone_7 = (TH1D*) unfold_Iter7->Clone();
   unfoldClone_7->Sumw2();
   unfoldClone_7->Divide(unfold_Iter5);
   unfoldClone_7->SetMarkerStyle(20);
   unfoldClone_7->SetMarkerColor(colors[12]);
 
-  TH1F* unfoldClone_8 = (TH1F*) unfold_Iter8->Clone();
+  TH1D* unfoldClone_8 = (TH1D*) unfold_Iter8->Clone();
   unfoldClone_8->Sumw2();
   unfoldClone_8->Divide(unfold_Iter5);
   unfoldClone_8->SetMarkerStyle(20);
   unfoldClone_8->SetMarkerColor(colors[14]);
 
-  TH1F* unfoldClone_9 = (TH1F*) unfold_Iter9->Clone();
+  TH1D* unfoldClone_9 = (TH1D*) unfold_Iter9->Clone();
   unfoldClone_9->Sumw2();
   unfoldClone_9->Divide(unfold_Iter5);
   unfoldClone_9->SetMarkerStyle(20);
@@ -226,7 +226,7 @@ void unfoldingTrueRatio(){
   unfoldClone_3->GetYaxis()->SetTitleSize(0.08);
   unfoldClone_3->GetYaxis()->SetTitleOffset(0.55);
   unfoldClone_3->GetYaxis()->SetRangeUser(0.8, 1.2);
-  unfoldClone_3->GetXaxis()->SetRangeUser(40,120);
+  //unfoldClone_3->GetXaxis()->SetRangeUser(40,120);
   unfoldClone_3->Draw();
   if(!drawMiddle4)unfoldClone_2->Draw("same");
   if(!drawMiddle4)unfoldClone_1->Draw("same");

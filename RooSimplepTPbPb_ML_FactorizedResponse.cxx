@@ -10,7 +10,7 @@
 //==============================================================================
 
 
-// RooSimplepTPbPb_XML.cxx: Script to unfold the ML corrected data
+// RooSimplepTPbPb_ML_FactorizedResponse.cxx: Script to unfold the ML corrected data with a factorized Response
 // Hannah Bossi <hannah.bossi@yale.edu>
 // 3/4/2020
 
@@ -155,7 +155,7 @@ TH2D* CorrelationHist (const TMatrixD& cov,const char* name, const char* title,
 // Example Unfolding
 //==============================================================================
 
-void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
+void RooSimplepTPbPb_ML_FactorizedResponse(TString cFiles2="filesML.txt")
 {
 #ifdef __CINT__
   gSystem->Load("libRooUnfold");
@@ -185,14 +185,19 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
   xbins[11]=190;
   xbins[12]=250;
   //xbins[13]=250;
+
+
+
+
+  
    
   //the raw correlation (data or psuedodata)
-  TH1D *h1raw(0);
-  h1raw=new TH1D("r","raw", 19, 25, 120);
+  //TH1D *h1raw(0);
+  //h1raw=new TH1D("r","raw", 19, 25, 120);
 
   //detector measure level (reco or hybrid MC)
   TH1D *h1smeared(0);
-  h1smeared=new TH1D("smeared","smeared",19, 25, 120);
+  h1smeared=new TH1D("smeared","smeared",19,25,120);
 
   // full range of reco
   TH1D *h1smearedFullRange(0);
@@ -200,7 +205,7 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
     
   //detector measure level no cuts
   TH1D *h1smearednocuts(0);
-  h1smearednocuts=new TH1D("smearednocuts","smearednocuts", 12, xbins);
+  h1smearednocuts=new TH1D("smearednocuts","smearednocuts", 19,25,120);
   //true correlations with measured cuts
   TH1D *h1true(0);
   h1true=new TH1D("true","true", 12, xbins);
@@ -219,13 +224,12 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
    h1smeared->Sumw2();
    h1smearedFullRange->Sumw2(); 
    h1true->Sumw2();
-   h1raw->Sumw2();
    h1fulleff->Sumw2();
 
    //branches in the tree that you need in this analysis
    // we need the hybrid Pt to determine what EB scaling factor
-   Float_t ptJetMatch, hybridPt, hybridPtData;
-   Double_t ptJet, leadingTrackPtData, leadingTrackPt;
+   Float_t ptJetMatch, hybridPt, hybridPtData, ptJet;
+   Double_t leadingTrackPtData, leadingTrackPt;
    Long64_t pTHardBin; // we are getting the pt hard bin from the tree this time
    Float_t cent;
    Double_t pTRec; // ml corrected data 
@@ -237,7 +241,20 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
    response.Setup(h1smeared,h1true);
    responsenotrunc.Setup(h1smearednocuts,h1fulleff);
 
-   
+
+   TFile*_file0= TFile::Open("Unfolding_NeuralNetwork_Mar26th_FullStats_Det_RecoBinning.root");
+   TH1D* h1raw = (TH1D*)_file0->Get("Bayesian_Unfoldediter5");
+   h1raw->Sumw2();
+   TH1D* effnm       = (TH1D*)_file0->Get("htruth"); // numerator for kinematic efficiecny          
+   TH1D* effdm     = (TH1D*)_file0->Get("trueptd");// denominator for kinematic efficiency  
+   effnm->Divide(effdm);
+   for(Int_t i =0 ; i < h1raw->GetNbinsX()+1; i++){
+     h1raw->SetBinContent(i, h1raw->GetBinContent(i)*(1./effnm->GetBinContent(i)));
+   }
+
+
+   // we don't need this instead we take the distribution from the unfolding file from before
+   /*
    TFile *input1=TFile::Open("/home/alidock/PredictionTrees/predictionTree_NeuralNetwork_For_LHC15o_R040_032620_FullStats.root");
    TTree *data=(TTree*)input1->Get("NeuralNetwork_For_LHC15o_R040");
    Int_t nEvents=data->GetEntries();
@@ -259,6 +276,7 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
      if(pTRec>120 || pTRec<25) continue;
      h1raw->Fill(pTRec, EBscale); 
    }
+   */
    // previously derived pT hard bin scaling factors INCLUDING rk. index with PtHardBin Branch
    Double_t scalingFactors[20] = {0.492069, 0.418282, 0.405473, 0.265289, 0.133235, 0.0642945, 0.0229219, 0.008419, 0.00360539, 0.00122459, 0.000494578, 0.000177912, 8.83422e-05, 4.28423e-05, 2.03583e-05, 1.03874e-05, 5.68744e-06, 2.99194e-06, 1.59651e-06, 2.09335e-06};
 
@@ -266,7 +284,7 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
    TTree *mc=(TTree*)input2->Get("NeuralNetwork_For_LHC16j5_Embedded_R040"); 
    Int_t nEv=mc->GetEntries(); 
    // get the jet pT predicted by the ml
-   mc->SetBranchAddress("Predicted_Jet_Pt", &ptJet); 
+   mc->SetBranchAddress("Jet_MC_MatchedDetLevelJet_Pt", &ptJet); 
    mc->SetBranchAddress("Jet_MC_MatchedPartLevelJet_Pt", &ptJetMatch);
    mc->SetBranchAddress("PtHardBin", &pTHardBin);
    mc->SetBranchAddress("Jet_Pt", &hybridPt);
@@ -294,7 +312,7 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
      h1smearedFullRange->Fill(ptJet, scalefactor);
      h1smearednocuts->Fill(ptJet,scalefactor);  
      responsenotrunc.Fill(ptJet,ptJetMatch,scalefactor);
-     if(ptJet>120 || ptJet<25) continue;
+     if(ptJet>250 || ptJet<10) continue;
      h1smeared->Fill(ptJet,scalefactor);
      //this is the half split to be the response 
      response.Fill(ptJet, ptJetMatch,scalefactor);
@@ -310,7 +328,7 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
  
     //////////efficiencies done////////////////////////////////////
  
-    TFile *fout=new TFile (Form("Unfolding_NeuralNetwork_Mar26th_FullStats_Part.root"),"RECREATE");
+    TFile *fout=new TFile (Form("Unfolding_NeuralNetwork_Mar26th_FactorizedResponse_RecoBinning.root"),"RECREATE");
     fout->cd();
     h1raw->SetName("raw");
     h1raw->Write();
@@ -332,7 +350,7 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
       RooUnfoldBayes unfold(&response, h1raw, iter, false);    // OR
       TH1D* hunf= (TH1D*) unfold.Hreco(errorTreatment);
       //FOLD BACK
-      TH1* hfold = response.ApplyToTruth (hunf, "");
+      TH1* hfold = response.ApplyToTruth(hunf, "");
 
       TH2D *htempUnf=(TH2D*)hunf->Clone("htempUnf");          
       htempUnf->SetName(Form("Bayesian_Unfoldediter%d",iter));
@@ -367,5 +385,5 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
 	  
 }
 #ifndef __CINT__
-int main () { RooSimplepTPbPb_ML(); return 0; }  // Main program when run stand-alone
+int main () { RooSimplepTPbPb_ML_FactorizedResponse(); return 0; }  // Main program when run stand-alone
 #endif

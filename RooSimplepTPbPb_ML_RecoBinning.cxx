@@ -155,7 +155,7 @@ TH2D* CorrelationHist (const TMatrixD& cov,const char* name, const char* title,
 // Example Unfolding
 //==============================================================================
 
-void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
+void RooSimplepTPbPb_ML_RecoBinning(TString cFiles2="filesML.txt")
 {
 #ifdef __CINT__
   gSystem->Load("libRooUnfold");
@@ -200,13 +200,13 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
     
   //detector measure level no cuts
   TH1D *h1smearednocuts(0);
-  h1smearednocuts=new TH1D("smearednocuts","smearednocuts", 12, xbins);
+  h1smearednocuts=new TH1D("smearednocuts","smearednocuts", 19,25, 120);
   //true correlations with measured cuts
   TH1D *h1true(0);
-  h1true=new TH1D("true","true", 12, xbins);
+  h1true=new TH1D("true","true", 19,25,120);
   //full true correlation
   TH1D *h1fulleff(0);
-  h1fulleff=new TH1D("truef","truef", 12, xbins); 
+  h1fulleff=new TH1D("truef","truef", 19,25, 120); 
   
   TH2D *hcovariance(0);
   hcovariance=new TH2D("covariance","covariance",10,0.,1.,10,0,1.);
@@ -267,7 +267,7 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
    Int_t nEv=mc->GetEntries(); 
    // get the jet pT predicted by the ml
    mc->SetBranchAddress("Predicted_Jet_Pt", &ptJet); 
-   mc->SetBranchAddress("Jet_MC_MatchedPartLevelJet_Pt", &ptJetMatch);
+   mc->SetBranchAddress("Jet_MC_MatchedDetLevelJet_Pt", &ptJetMatch);
    mc->SetBranchAddress("PtHardBin", &pTHardBin);
    mc->SetBranchAddress("Jet_Pt", &hybridPt);
    mc->SetBranchAddress("Event_Centrality", &cent);
@@ -289,7 +289,7 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
      else if(hybridPt >= 100. && hybridPt < 500.) EBscale = 1.0;
 
      scalefactor*=EBscale; 
-     if(ptJetMatch < 10 || ptJetMatch > 250) continue;
+     if(ptJetMatch < 25 || ptJetMatch > 120) continue;
      h1fulleff->Fill(ptJetMatch,scalefactor);  
      h1smearedFullRange->Fill(ptJet, scalefactor);
      h1smearednocuts->Fill(ptJet,scalefactor);  
@@ -310,7 +310,7 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
  
     //////////efficiencies done////////////////////////////////////
  
-    TFile *fout=new TFile (Form("Unfolding_NeuralNetwork_Mar26th_FullStats_Part.root"),"RECREATE");
+    TFile *fout=new TFile (Form("Unfolding_NeuralNetwork_Mar26th_FullStats_Det_RecoBinning.root"),"RECREATE");
     fout->cd();
     h1raw->SetName("raw");
     h1raw->Write();
@@ -367,5 +367,5 @@ void RooSimplepTPbPb_ML(TString cFiles2="filesML.txt")
 	  
 }
 #ifndef __CINT__
-int main () { RooSimplepTPbPb_ML(); return 0; }  // Main program when run stand-alone
+int main () { RooSimplepTPbPb_ML_RecoBinning(); return 0; }  // Main program when run stand-alone
 #endif
